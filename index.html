@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy-Tech & Prop-Tech 3D Showcase Portal</title>
+    
+    <!-- Meta tags for pitch and SEO -->
+    <meta name="description" content="Portal showcase interaktif untuk visualisasi alur kerja 3D WattWise AI, Lumina AI, dan KostHub Energy. Built using Three.js.">
+    <meta name="author" content="Antigravity Team">
+    
+    <!-- Google Fonts: Outfit & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #030712;
+            --card-bg: rgba(17, 24, 39, 0.45);
+            --card-border: rgba(255, 255, 255, 0.05);
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            
+            --color-wattwise: #eab308; /* Yellow */
+            --color-lumina: #06b6d4; /* Cyan */
+            --color-kosthub: #14b8a6; /* Teal */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Decorative Background Gradients */
+        .bg-glow-1 {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.12) 0%, rgba(3, 7, 18, 0) 70%);
+            top: -200px;
+            left: -100px;
+            z-index: -1;
+            filter: blur(40px);
+        }
+
+        .bg-glow-2 {
+            position: absolute;
+            width: 700px;
+            height: 700px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(20, 184, 166, 0.08) 0%, rgba(3, 7, 18, 0) 70%);
+            bottom: -100px;
+            right: -100px;
+            z-index: -1;
+            filter: blur(40px);
+        }
+
+        /* Container & Header */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+            width: 100%;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 5rem;
+        }
+
+        .brand-badge {
+            display: inline-block;
+            padding: 0.5rem 1.25rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #38bdf8;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 40%, #93c5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.25rem;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Grid & Cards */
+        .showcase-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2.5rem;
+            margin-bottom: 4rem;
+        }
+
+        .showcase-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(16px);
+        }
+
+        .showcase-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(800px circle at var(--x, 0px) var(--y, 0px), rgba(255,255,255,0.06), transparent 40%);
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .showcase-card:hover::before {
+            opacity: 1;
+        }
+
+        .showcase-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Accent glow borders on card hover */
+        .showcase-card.wattwise:hover { box-shadow: 0 15px 30px rgba(234, 179, 8, 0.08); border-color: rgba(234, 179, 8, 0.35); }
+        .showcase-card.lumina:hover { box-shadow: 0 15px 30px rgba(6, 182, 212, 0.08); border-color: rgba(6, 182, 212, 0.35); }
+        .showcase-card.kosthub:hover { box-shadow: 0 15px 30px rgba(20, 184, 166, 0.08); border-color: rgba(20, 184, 166, 0.35); }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+        }
+
+        .card-logo {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.4rem;
+            color: #030712;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+        }
+
+        .wattwise .card-logo { background: linear-gradient(135deg, #fef08a, var(--color-wattwise)); box-shadow: 0 0 15px rgba(234, 179, 8, 0.3); }
+        .lumina .card-logo { background: linear-gradient(135deg, #a5f3fc, var(--color-lumina)); box-shadow: 0 0 15px rgba(6, 182, 212, 0.3); }
+        .kosthub .card-logo { background: linear-gradient(135deg, #99f6e4, var(--color-kosthub)); box-shadow: 0 0 15px rgba(20, 184, 166, 0.3); }
+
+        .card-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0.35rem 0.75rem;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .wattwise .card-badge { color: var(--color-wattwise); border-color: rgba(234, 179, 8, 0.2); }
+        .lumina .card-badge { color: var(--color-lumina); border-color: rgba(6, 182, 212, 0.2); }
+        .kosthub .card-badge { color: var(--color-kosthub); border-color: rgba(20, 184, 166, 0.2); }
+
+        .card-body {
+            margin-bottom: 2.5rem;
+            flex-grow: 1;
+        }
+
+        .card-body h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: #ffffff;
+        }
+
+        .card-body p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.8rem;
+            color: #e5e7eb;
+        }
+
+        .feature-item svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+        }
+
+        .wattwise .feature-item svg { color: var(--color-wattwise); }
+        .lumina .feature-item svg { color: var(--color-lumina); }
+        .kosthub .feature-item svg { color: var(--color-kosthub); }
+
+        /* Card Link Button */
+        .btn-launch {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.9rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-decoration: none;
+            color: #030712;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .wattwise .btn-launch { background: var(--color-wattwise); }
+        .wattwise .btn-launch:hover { background: #facc15; box-shadow: 0 0 15px rgba(234, 179, 8, 0.4); }
+
+        .lumina .btn-launch { background: var(--color-lumina); }
+        .lumina .btn-launch:hover { background: #22d3ee; box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); }
+
+        .kosthub .btn-launch { background: var(--color-kosthub); }
+        .kosthub .btn-launch:hover { background: #2dd4bf; box-shadow: 0 0 15px rgba(20, 184, 166, 0.4); }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2.5rem;
+            font-size: 0.8rem;
+            color: #4b5563;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            background: rgba(3, 7, 18, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        footer a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsiveness */
+        @media (max-width: 768px) {
+            h1 { font-size: 2.25rem; }
+            .container { padding: 3rem 1.5rem; }
+            .showcase-grid { gap: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-glow-1"></div>
+    <div class="bg-glow-2"></div>
+
+    <div class="container">
+        <header>
+            <span class="brand-badge">Pitch Deck Showcase</span>
+            <h1>Visualisasi Alur Kerja 3D</h1>
+            <p>Koleksi ilustrasi 3D interaktif premium untuk demonstrasi produk startup teknologi energi dan properti masa kini.</p>
+        </header>
+
+        <main class="showcase-grid">
+            <!-- WATTWISE AI CARD -->
+            <section class="showcase-card wattwise">
+                <div class="card-header">
+                    <div class="card-logo">W</div>
+                    <span class="card-badge">WattWise AI</span>
+                </div>
+                <div class="card-body">
+                    <h2>Optimasi Energi UMKM</h2>
+                    <p>Membantu usaha kecil menengah menghemat listrik melalui monitor alat listrik pintar, deteksi pemborosan otomatis, dan prediksi biaya bulanan.</p>
+                    <ul class="feature-list">
+                        <li class="feature-item">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                            Prediksi Biaya & Tagihan Bulanan
+                        </li>
+                        <li class="feature-item">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                            Deteksi Pemborosan Alat Listrik
+                        </li>
+                        <li class="feature-item">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                            Analisis Margin Keuntungan Usaha
+                        </li>
+                    </ul>
+                </div>
+                <a href="./wattwise/index.html" class="btn-launch">
+                    Buka Animasi
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+            </section>
+
+            <!-- LUMINA AI CARD -->
+            <section class="showcase-card lumina">
+                <div class="card-header">
+                    <div class="card-logo">L</div>
+                    <span class="card-badge">Lumina AI</span>
+                </div>
+                <div class="card-body">
+                    <h2>Pemantauan Beban NILM</h2>
+                    <p>Teknologi monitoring non-intrusif (NILM) untuk memisahkan penggunaan energi sirkuit bangunan hanya dengan satu sensor utama berbasis AI.</p>
+                    <ul class="feature-list">
+                        <li class="feature-item">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                            Satu Sensor Utama (Single Clip-On)
+                        </li>
+                        <li class="feature-item">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                            Disagregasi Jaringan Saraf AI
+                        </li>
+                        <li class="feature-item">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                            Virtual Energy Audit & Anomaly Alert
+                        </li>
+                    </ul>
+                </div>
+                <a href="./lumina/index.html" class="btn-launch">
+                    Buka Animasi
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+            </section>
+
+            <!-- KOSTHUB ENERGY CARD -->
+            <section class="showcase-card kosthub">
+                <div class="card-header">
+                    <div class="card-logo">K</div>
+                    <span class="card-badge">KostHub Energy</span>
+                </div>
+                <div class="card-body">
+                    <h2>Sub-Metering Kamar Kos</h2>
+                    <p>Sistem manajemen energi rumah kos pintar untuk memantau listrik per kamar, otomatisasi WhatsApp tagihan, dan transparansi penyewa.</p>
+                    <ul class="feature-list">
+                        <li class="feature-item">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                            Monitoring Kamar Secara Real-Time
+                        </li>
+                        <li class="feature-item">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                            WhatsApp Invoice Otomatis (No Manual)
+                        </li>
+                        <li class="feature-item">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                            Portal Transparan Penyewa & Pemilik
+                        </li>
+                    </ul>
+                </div>
+                <a href="./kosthub/index.html" class="btn-launch">
+                    Buka Animasi
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Pitch Showcase. Didesain secara premium untuk Pitch Deck & Vercel. Dibuat dengan Three.js & GSAP.</p>
+    </footer>
+
+    <!-- Interactive hover shine effect script -->
+    <script>
+        const cards = document.querySelectorAll('.showcase-card');
+        cards.forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--x', `${x}px`);
+                card.style.setProperty('--y', `${y}px`);
+            });
+        });
+    </script>
+</body>
+</html>
