@@ -1,0 +1,1810 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina AI - Pemantauan Energi Cerdas NILM</title>
+    
+    <!-- Meta tags for pitch deck presentation -->
+    <meta name="description" content="Lumina AI menggunakan Non-Intrusive Load Monitoring (NILM) dan AI untuk mengurai listrik total bangunan menjadi kecerdasan tingkat peralatan hanya dengan satu sensor.">
+    <meta name="author" content="Lumina AI">
+    
+    <!-- Google Fonts: Outfit (Brand & Titles) and Plus Jakarta Sans (UI) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CDNs: Three.js, OrbitControls, GSAP for smooth timelines -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-color: #050811;
+            --panel-bg: rgba(6, 12, 26, 0.7);
+            --panel-border: rgba(6, 182, 212, 0.25); /* Cyan */
+            --primary: #06b6d4; /* Cyan */
+            --primary-glow: rgba(6, 182, 212, 0.5);
+            --accent-green: #10b981; /* Electric Green */
+            --accent-green-glow: rgba(16, 185, 129, 0.5);
+            --accent-alert: #ef4444; /* Anomaly Alert */
+            --text-main: #f8fafc;
+            --text-muted: #64748b;
+            --sidebar-width: 420px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+        }
+
+        /* Ambient glowing background decoration */
+        .ambient-glow {
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, rgba(5, 8, 17, 0) 70%);
+            top: -300px;
+            right: -200px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Split Screen Layout */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100%;
+            background: linear-gradient(180deg, rgba(6, 12, 26, 0.9) 0%, rgba(3, 5, 10, 0.98) 100%);
+            border-right: 1px solid var(--panel-border);
+            backdrop-filter: blur(20px);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            padding: 2.5rem 2rem;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .viewport-container {
+            flex: 1;
+            height: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        #webgl-canvas {
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+
+        /* Brand & Logo styling */
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 2rem;
+        }
+
+        .brand-logo {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--primary), var(--accent-green));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px var(--primary-glow);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: #050811;
+            position: relative;
+        }
+
+        .brand-logo::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--primary), var(--accent-green));
+            z-index: -1;
+            opacity: 0.5;
+            filter: blur(4px);
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: 0.5px;
+            line-height: 1.2;
+        }
+
+        .brand-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .intro {
+            margin-bottom: 2.2rem;
+        }
+
+        .intro h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 600;
+            line-height: 1.3;
+            margin-bottom: 0.75rem;
+            background: linear-gradient(135deg, #ffffff 40%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .intro p {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #94a3b8;
+        }
+
+        /* Timeline / Workflow Stepper */
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+            flex-grow: 1;
+            margin-bottom: 2rem;
+        }
+
+        .timeline-step {
+            display: flex;
+            gap: 1rem;
+            padding: 0.9rem;
+            border-radius: 12px;
+            background: rgba(30, 41, 59, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .timeline-step::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: var(--primary);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .timeline-step.active {
+            background: rgba(6, 182, 212, 0.06);
+            border-color: rgba(6, 182, 212, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            transform: translateX(4px);
+        }
+
+        .timeline-step.active::before {
+            transform: scaleY(1);
+        }
+
+        .timeline-step.active[data-phase="0"]::before { background: var(--primary); }
+        .timeline-step.active[data-phase="1"]::before { background: var(--primary); }
+        .timeline-step.active[data-phase="2"]::before { background: var(--accent-green); }
+        .timeline-step.active[data-phase="3"]::before { background: var(--accent-green); }
+        .timeline-step.active[data-phase="4"]::before { background: var(--accent-alert); }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #64748b;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-step.active .step-number {
+            background: var(--primary);
+            color: #050811;
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .timeline-step.active[data-phase="2"] .step-number,
+        .timeline-step.active[data-phase="3"] .step-number {
+            background: var(--accent-green);
+            box-shadow: 0 0 10px var(--accent-green-glow);
+        }
+        
+        .timeline-step.active[data-phase="4"] .step-number {
+            background: var(--accent-alert);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+
+        .step-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .step-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        .step-desc {
+            font-size: 0.8rem;
+            line-height: 1.4;
+            color: #94a3b8;
+        }
+
+        /* Impact Metric Card */
+        .footer-card {
+            background: rgba(6, 12, 26, 0.5);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .footer-headline {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary);
+        }
+
+        .footer-message {
+            font-size: 0.85rem;
+            line-height: 1.4;
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        .footer-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.25rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 0.8rem;
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.15rem;
+        }
+
+        .stat-val.cyan { color: var(--primary); }
+        .stat-val.green { color: var(--accent-green); }
+
+        .stat-lbl {
+            font-size: 0.65rem;
+            color: #64748b;
+            margin-top: 0.15rem;
+        }
+
+        /* Overlays in Viewport */
+        .viewport-overlay {
+            position: absolute;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .top-bar {
+            top: 2rem;
+            left: 2rem;
+            right: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .glass-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
+            color: var(--text-main);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            pointer-events: auto;
+        }
+
+        .simulation-status {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 12px var(--primary-glow);
+            animation: pulse-glow-cyan 1.5s infinite;
+        }
+
+        @keyframes pulse-glow-cyan {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 18px var(--primary); }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+
+        .status-text {
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .controls-container {
+            bottom: 2rem;
+            left: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Scrubber & Timeline Bar */
+        .scrubber-wrapper {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(6, 12, 26, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 0.75rem 1.2rem;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .time-label {
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #64748b;
+            min-width: 45px;
+        }
+
+        .progress-bar-container {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent-green));
+            border-radius: 3px;
+            width: 0%;
+            position: relative;
+        }
+
+        .progress-handle {
+            position: absolute;
+            top: 50%;
+            right: 0;
+            transform: translate(50%, -50%);
+            width: 14px;
+            height: 14px;
+            background: #ffffff;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(0,0,0,0.6);
+            transition: transform 0.1s ease;
+        }
+
+        .progress-bar-container:hover .progress-handle {
+            transform: translate(50%, -50%) scale(1.2);
+        }
+
+        .button-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+            pointer-events: auto;
+        }
+
+        .btn {
+            background: rgba(6, 12, 26, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            color: var(--text-main);
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn:hover {
+            background: rgba(6, 182, 212, 0.15);
+            border-color: var(--primary);
+            color: #ffffff;
+        }
+
+        .btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #050811;
+            font-weight: 600;
+        }
+
+        /* Camera Mode controller */
+        .camera-modes {
+            display: flex;
+            gap: 0.5rem;
+            pointer-events: auto;
+        }
+
+        .camera-btn {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            color: #94a3b8;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .camera-btn:hover {
+            color: #ffffff;
+            background: rgba(6, 182, 212, 0.1);
+        }
+
+        .camera-btn.active {
+            color: var(--primary);
+            border-color: var(--primary);
+            background: rgba(6, 182, 212, 0.05);
+            font-weight: 600;
+        }
+
+        /* HUD Overlay Labels */
+        .hud-overlay {
+            position: absolute;
+            top: 6.5rem;
+            left: 2rem;
+            width: 280px;
+            background: rgba(5, 8, 17, 0.85);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            pointer-events: auto;
+            padding: 1rem;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .hud-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--primary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.4rem;
+        }
+
+        .hud-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+        }
+
+        .hud-item .val {
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .hud-item .val.alert {
+            color: var(--accent-alert);
+            animation: text-pulse 1s infinite alternate;
+        }
+
+        @keyframes text-pulse {
+            from { opacity: 0.7; }
+            to { opacity: 1; text-shadow: 0 0 5px rgba(239, 68, 68, 0.5); }
+        }
+
+        /* Screen loader */
+        .loader-overlay {
+            position: absolute;
+            inset: 0;
+            background-color: var(--bg-color);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            transition: opacity 0.8s ease;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(6, 182, 212, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            border-right-color: var(--accent-green);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loader-text {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 500;
+            font-size: 1.1rem;
+            color: #64748b;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Ambient back glow -->
+    <div class="ambient-glow"></div>
+
+    <!-- Loading Screen -->
+    <div class="loader-overlay" id="loader">
+        <div class="spinner"></div>
+        <div class="loader-text">MEMULAI DEKOMPOSISI DISAGREGASI NILM LUMINA...</div>
+    </div>
+
+    <!-- LEFT SIDEBAR: Brand, description, timeline and stats -->
+    <aside class="sidebar">
+        <header class="brand">
+            <div class="brand-logo">L</div>
+            <div class="brand-text">
+                <span class="brand-title">Lumina AI</span>
+                <span class="brand-subtitle">Kecerdasan NILM</span>
+            </div>
+        </header>
+
+        <section class="intro">
+            <h1>Satu Sensor. Wawasan Banyak Peralatan.</h1>
+            <p>Lumina AI menggunakan teknologi Non-Intrusive Load Monitoring (NILM) canggih untuk memisahkan sinyal listrik total gedung Anda menjadi metrik tingkat peralatan hanya dengan satu sensor utama.</p>
+        </section>
+
+        <!-- Dynamic stepper timeline -->
+        <main class="timeline" id="timeline-stepper">
+            <div class="timeline-step active" data-phase="0">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <span class="step-title">Tangkap Sensor Tunggal</span>
+                    <span class="step-desc">Listrik mengalir ke panel utama. Sensor clip-on Lumina menangkap total sinyal beban listrik.</span>
+                </div>
+            </div>
+            <div class="timeline-step" data-phase="1">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <span class="step-title">Gelombang Sinyal Agregat</span>
+                    <span class="step-desc">Sensor mendigitalisasi gelombang listrik kompleks yang berisi gabungan beban alat.</span>
+                </div>
+            </div>
+            <div class="timeline-step" data-phase="2">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <span class="step-title">Disagregasi AI NILM</span>
+                    <span class="step-desc">Jaringan saraf AI membagi sinyal agregat total menjadi beban alat yang terpisah.</span>
+                </div>
+            </div>
+            <div class="timeline-step" data-phase="3">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <span class="step-title">Analisis Konsumsi Alat</span>
+                    <span class="step-desc">Tanda pemakaian terpisah dipetakan ke metrik konsumsi waktu nyata (AC, Kulkas, Lampu).</span>
+                </div>
+            </div>
+            <div class="timeline-step" data-phase="4">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <span class="step-title">Anomali & Audit Pintar</span>
+                    <span class="step-desc">Sistem memperingatkan pemilik tentang konsumsi AC tidak wajar dan menyusun Audit Energi.</span>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer pitch metrics -->
+        <footer class="footer-card">
+            <span class="footer-headline">Fitur Platform</span>
+            <p class="footer-message">"AI memisahkan total penggunaan listrik menjadi kecerdasan tingkat peralatan."</p>
+            <div class="footer-stats">
+                <div class="stat-box">
+                    <span class="stat-val cyan">1 Sensor</span>
+                    <span class="stat-lbl">Perangkat Keras</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-val green">NILM AI</span>
+                    <span class="stat-lbl">Disagregasi Beban</span>
+                </div>
+            </div>
+        </footer>
+    </aside>
+
+    <!-- RIGHT CONTAINER: WebGL scene and overlay dashboard controls -->
+    <div class="viewport-container">
+        <!-- 3D Canvas -->
+        <canvas id="webgl-canvas"></canvas>
+
+        <!-- Top Status Bar Overlay -->
+        <div class="viewport-overlay top-bar">
+            <div class="glass-card simulation-status">
+                <div class="pulse-dot" id="status-dot"></div>
+                <span class="status-text" id="status-lbl">Aliran Jaringan Aktif</span>
+            </div>
+            
+            <div class="camera-modes">
+                <button class="camera-btn active" id="cam-auto">Jalur Sinematik</button>
+                <button class="camera-btn" id="cam-free">Bebas Jelajah</button>
+                <button class="btn" id="btn-reset-view" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;">Atur Ulang</button>
+            </div>
+        </div>
+
+        <!-- Real-time HUD stats -->
+        <div class="viewport-overlay hud-overlay" id="hud-panel">
+            <span class="hud-title">Status Inti NILM Lumina</span>
+            <div class="hud-item">
+                <span>Sinyal Masukan:</span>
+                <span class="val" id="hud-signal">Umpan Listrik</span>
+            </div>
+            <div class="hud-item">
+                <span>Beban Terdeteksi:</span>
+                <span class="val" id="hud-loads">0 / 7 Alat</span>
+            </div>
+            <div class="hud-item">
+                <span>Suhu Inti AI:</span>
+                <span class="val">38.4°C</span>
+            </div>
+            <div class="hud-item">
+                <span>Deteksi Anomali:</span>
+                <span class="val" id="hud-anomaly">Memantau...</span>
+            </div>
+        </div>
+
+        <!-- Lower controls overlay: Scrubber & Player buttons -->
+        <div class="viewport-overlay controls-container">
+            <div class="scrubber-wrapper">
+                <button class="btn" id="btn-play-pause" style="padding: 0.4rem; border-radius: 50%;">
+                    <!-- Play icon -->
+                    <svg id="play-icon" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    <!-- Pause icon -->
+                    <svg id="pause-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                </button>
+                
+                <span class="time-label" id="time-curr">00.0s</span>
+                
+                <div class="progress-bar-container" id="timeline-scrubber">
+                    <div class="progress-bar-fill" id="scrubber-fill">
+                        <div class="progress-handle"></div>
+                    </div>
+                </div>
+                
+                <span class="time-label">15.0s</span>
+            </div>
+
+            <div class="button-bar">
+                <div class="action-buttons" style="background: rgba(6,12,26,0.6); padding: 0.25rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05)">
+                    <button class="btn btn-speed active" data-speed="0.5">Kecepatan 0.5x</button>
+                    <button class="btn btn-speed" data-speed="1.0">Kecepatan 1x</button>
+                </div>
+                <span style="font-size: 0.75rem; color: #64748b; font-weight: 500;">Pilih Bebas Jelajah untuk mengontrol kamera secara manual. Seret layar 3D untuk memutar.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN THREE.JS APP CODE -->
+    <script>
+        // --- 1. CONFIGURATION & CONSTANTS ---
+        const LOOP_DURATION = 15.0; // Total duration in seconds
+        const PHASES = [
+            { id: 0, start: 0, end: 3, label: "Single Sensor Capture", color: "#06b6d4" },
+            { id: 1, start: 3, end: 6, label: "Aggregate Waveform", color: "#06b6d4" },
+            { id: 2, start: 6, end: 9, label: "NILM AI Disaggregation", color: "#10b981" },
+            { id: 3, start: 9, end: 12, label: "Appliance Analytics", color: "#10b981" },
+            { id: 4, start: 12, end: 15, label: "Anomaly & Smart Audit", color: "#ef4444" }
+        ];
+
+        // Global State variables
+        let isPlaying = true;
+        let playSpeed = 0.5; // Default 0.5x Speed
+        let animProgress = 0; // 0.0 to 1.0 representing timeline state
+        let activePhaseIndex = 0;
+        let lastTime = 0;
+        let isCameraAuto = true;
+
+        // Colors
+        const COLOR_CYAN = 0x06b6d4;
+        const COLOR_GREEN = 0x10b981;
+        const COLOR_ALERT = 0xef4444;
+        const COLOR_DARK_NAVY = 0x0c1e36;
+        const COLOR_STEEL = 0x475569;
+        const COLOR_WHITE = 0xf8fafc;
+
+        const materials = {};
+
+        // Three.js instances
+        let scene, camera, renderer, controls;
+        let waveformLines = [];
+        let disaggregatedStreams = [];
+        let particles = [];
+        
+        // 3D Objects that need reference updates
+        let aiCore, neuralNetGroup, acWindGroup, alertIcon;
+        let mainSensorClip;
+        let boardModules = {}; // Map of dashboard texture planes
+        let boardCanvases = {}; // Offscreen canvas contexts
+
+        // Coordinates map of important nodes inside the Lumina NILM Scene
+        const NODES = {
+            mainPowerFeed: new THREE.Vector3(7.5, 0.4, -6),
+            mainBreakerPanel: new THREE.Vector3(2.8, 1.3, -4),
+            mainSensor: new THREE.Vector3(2.8, 1.25, -4), // CLIP-ON
+            
+            // AI Components
+            aiEngineCore: new THREE.Vector3(-0.2, 3.2, -1.8),
+            dashboard: new THREE.Vector3(0.5, 4.8, -4.5),
+            
+            // Appliance centers
+            ac: new THREE.Vector3(-2.2, 2.3, -1.2), // Mounted high
+            fridge: new THREE.Vector3(-2.2, 0.8, 1.5),
+            waterPump: new THREE.Vector3(-0.2, 0.6, -3.2), // back niche
+            washingMachine: new THREE.Vector3(-2.2, 0.6, 0.2),
+            iron: new THREE.Vector3(1.2, 0.85, 1.5),
+            lighting: new THREE.Vector3(0, 2.8, 0.5), // Ceiling plane
+            computer: new THREE.Vector3(1.5, 0.9, -0.6)
+        };
+
+        // --- 2. OFFSCREEN DASHBOARD CANVAS DRAWING ---
+        function initDashboardCanvases() {
+            const createCtx = (w, h) => {
+                const canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                return { canvas, ctx };
+            };
+
+            boardCanvases.header = createCtx(512, 128);
+            boardCanvases.auditReport = createCtx(256, 256);
+            boardCanvases.applianceRates = createCtx(256, 256);
+            boardCanvases.anomalyList = createCtx(256, 256);
+            boardCanvases.predictions = createCtx(256, 256);
+            boardCanvases.savingsCard = createCtx(256, 256);
+        }
+
+        function drawDashboard(phase) {
+            // Helper for glassmorphism panels inside 2D Canvas
+            const drawPanelBg = (ctx, w, h, title, titleColor = '#64748b') => {
+                ctx.clearRect(0, 0, w, h);
+                // Glass background
+                ctx.fillStyle = 'rgba(6, 12, 26, 0.95)';
+                ctx.beginPath();
+                ctx.roundRect(0, 0, w, h, 16);
+                ctx.fill();
+                
+                // Border
+                ctx.strokeStyle = phase >= 3 ? 'rgba(6, 182, 212, 0.4)' : 'rgba(255, 255, 255, 0.05)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Top Header Text
+                ctx.font = 'bold 12px "Outfit", sans-serif';
+                ctx.fillStyle = titleColor;
+                ctx.fillText(title.toUpperCase(), 16, 28);
+
+                // Subtle dividing line
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(16, 38);
+                ctx.lineTo(w - 16, 38);
+                ctx.stroke();
+            };
+
+            // 1. HEADER PANEL
+            const { ctx: hCtx } = boardCanvases.header;
+            hCtx.clearRect(0, 0, 512, 128);
+            hCtx.fillStyle = 'rgba(6, 12, 26, 0.95)';
+            hCtx.beginPath();
+            hCtx.roundRect(0, 0, 512, 128, 16);
+            hCtx.fill();
+            hCtx.strokeStyle = 'rgba(6, 182, 212, 0.5)';
+            hCtx.lineWidth = 3;
+            hCtx.stroke();
+
+            hCtx.font = 'bold 24px "Outfit", sans-serif';
+            hCtx.fillStyle = '#ffffff';
+            hCtx.fillText("LAPORAN AUDIT ENERGI VIRTUAL", 24, 48);
+
+            hCtx.font = '600 13px "Plus Jakarta Sans", sans-serif';
+            hCtx.fillStyle = '#64748b';
+            hCtx.fillText("LUMINA AI • ENGINE DISAGREGASI SATU SENSOR", 24, 76);
+
+            hCtx.beginPath();
+            hCtx.arc(24, 102, 6, 0, Math.PI * 2);
+            if (phase === 0 || phase === 1) {
+                hCtx.fillStyle = '#06b6d4'; // Cyan
+                hCtx.fill();
+                hCtx.font = '500 12px monospace';
+                hCtx.fillStyle = '#06b6d4';
+                hCtx.fillText("MENANGKAP ALIRAN LISTRIK • MENYUSUN TANDA GELOMBANG...", 36, 106);
+            } else if (phase === 2) {
+                hCtx.fillStyle = '#10b981'; // Green
+                hCtx.fill();
+                hCtx.font = '500 12px monospace';
+                hCtx.fillStyle = '#10b981';
+                hCtx.fillText("AI MENGEKSTRAK HARMONISA DATA BEBAN...", 36, 106);
+            } else {
+                hCtx.fillStyle = '#ef4444'; // Red
+                hCtx.fill();
+                hCtx.font = '500 12px monospace';
+                hCtx.fillStyle = '#ef4444';
+                hCtx.fillText("SELESAI • 1 PERINGATAN ANOMALI KRITIS TERDETEKSI", 36, 106);
+            }
+
+            // 2. AUDIT REPORT OVERVIEW
+            const { ctx: aCtx } = boardCanvases.auditReport;
+            drawPanelBg(aCtx, 256, 256, "Ringkasan Sistem");
+            aCtx.font = '500 13px "Plus Jakarta Sans", sans-serif';
+            aCtx.fillStyle = '#64748b';
+            aCtx.fillText("Status Model NILM:", 20, 68);
+
+            if (phase < 3) {
+                aCtx.font = 'bold 16px monospace';
+                aCtx.fillStyle = '#06b6d4';
+                aCtx.fillText("MENDAPATKAN UMPAN...", 20, 110);
+                aCtx.font = '12px "Plus Jakarta Sans", sans-serif';
+                aCtx.fillStyle = '#475569';
+                aCtx.fillText("Menganalisis lonjakan beban...", 20, 140);
+            } else {
+                aCtx.font = 'bold 22px "Outfit", sans-serif';
+                aCtx.fillStyle = '#ffffff';
+                aCtx.fillText("7 Alat Listrik Aktif", 20, 105);
+
+                aCtx.font = 'bold 13px "Plus Jakarta Sans", sans-serif';
+                aCtx.fillStyle = '#10b981';
+                aCtx.fillText("Presisi Disagregasi: 98.4%", 20, 138);
+
+                aCtx.font = '12px "Plus Jakarta Sans", sans-serif';
+                aCtx.fillStyle = '#64748b';
+                aCtx.fillText("Masukan: 220V Fasa A Panel Utama", 20, 175);
+                aCtx.fillText("Latensi Data: 120ms (Waktu Nyata)", 20, 195);
+            }
+
+            // 3. APPLIANCE RATES
+            const { ctx: rCtx } = boardCanvases.applianceRates;
+            drawPanelBg(rCtx, 256, 256, "Pembagian Beban Peralatan");
+            
+            if (phase < 3) {
+                rCtx.font = 'bold 15px "Outfit", sans-serif';
+                rCtx.fillStyle = '#475569';
+                rCtx.fillText("Mengurai arus listrik...", 20, 100);
+            } else {
+                const appliances = [
+                    { name: "AC", share: 42, color: '#ef4444' },
+                    { name: "Kulkas", share: 18, color: '#10b981' },
+                    { name: "Pompa Air", share: 12, color: '#06b6d4' },
+                    { name: "Pencahayaan", share: 8, color: '#06b6d4' },
+                    { name: "Lainnya / Tidak Diketahui", share: 5, color: '#64748b' }
+                ];
+
+                appliances.forEach((app, idx) => {
+                    const y = 65 + idx * 36;
+                    
+                    rCtx.font = 'bold 11px "Plus Jakarta Sans", sans-serif';
+                    rCtx.fillStyle = '#ffffff';
+                    rCtx.fillText(app.name, 20, y);
+                    rCtx.textAlign = 'right';
+                    rCtx.fillText(`${app.share}%`, 236, y);
+                    rCtx.textAlign = 'left';
+
+                    rCtx.fillStyle = 'rgba(255,255,255,0.05)';
+                    rCtx.beginPath();
+                    rCtx.roundRect(20, y + 6, 216, 6, 3);
+                    rCtx.fill();
+
+                    rCtx.fillStyle = app.color;
+                    rCtx.beginPath();
+                    rCtx.roundRect(20, y + 6, 216 * (app.share / 100), 6, 3);
+                    rCtx.fill();
+                });
+            }
+
+            // 4. ANOMALY LIST PANEL
+            const { ctx: anCtx } = boardCanvases.anomalyList;
+            drawPanelBg(anCtx, 256, 256, "Peringatan Anomali Kritis", '#ef4444');
+            
+            if (phase < 4) {
+                anCtx.font = 'bold 15px "Outfit", sans-serif';
+                anCtx.fillStyle = '#475569';
+                anCtx.fillText("Memindai anomali sinyal...", 20, 100);
+            } else {
+                anCtx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+                anCtx.beginPath();
+                anCtx.roundRect(16, 55, 224, 75, 8);
+                anCtx.fill();
+                anCtx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+                anCtx.lineWidth = 1;
+                anCtx.stroke();
+
+                anCtx.font = 'bold 11px "Outfit", sans-serif';
+                anCtx.fillStyle = '#ef4444';
+                anCtx.fillText("⚠ BEBAN TIDAK NORMAL PADA AC", 28, 76);
+
+                anCtx.font = '500 10px "Plus Jakarta Sans", sans-serif';
+                anCtx.fillStyle = '#f8fafc';
+                anCtx.fillText("Siklus pendek kompresor terdeteksi.", 28, 96);
+                anCtx.fillText("Rasio pemborosan: +2.4 kWh/Jam.", 28, 110);
+
+                anCtx.font = '11px "Plus Jakarta Sans", sans-serif';
+                anCtx.fillStyle = '#94a3b8';
+                anCtx.fillText("Rekomendasi:", 20, 158);
+                anCtx.fillStyle = '#06b6d4';
+                anCtx.fillText("Jadwalkan pembersihan AC & filter.", 20, 178);
+                anCtx.fillStyle = '#10b981';
+                anCtx.fillText("Estimasi hemat: Rp 350rb/bln.", 20, 198);
+            }
+
+            // 5. BILL PREDICTIONS
+            const { ctx: pCtx } = boardCanvases.predictions;
+            drawPanelBg(pCtx, 256, 256, "Analisis Biaya Bulanan");
+            
+            if (phase < 3) {
+                pCtx.font = 'bold 15px "Outfit", sans-serif';
+                pCtx.fillStyle = '#475569';
+                pCtx.fillText("Simulasi tagihan...", 20, 100);
+            } else {
+                pCtx.font = 'bold 12px "Outfit", sans-serif';
+                pCtx.fillStyle = '#64748b';
+                
+                pCtx.fillText("PREDIKSI BIAYA BULANAN", 20, 68);
+                pCtx.font = 'bold 20px "Outfit", sans-serif';
+                pCtx.fillStyle = '#ffffff';
+                pCtx.fillText(phase === 4 ? "Rp 1,120,000" : "Rp 1,470,000", 20, 92);
+
+                pCtx.font = 'bold 12px "Outfit", sans-serif';
+                pCtx.fillStyle = '#64748b';
+                pCtx.fillText("BIAYA PEMBOROSAN ENERGI", 20, 142);
+                pCtx.font = 'bold 20px "Outfit", sans-serif';
+                pCtx.fillStyle = phase === 4 ? '#ef4444' : '#ffffff';
+                pCtx.fillText(phase === 4 ? "Rp 350,000 / Bln" : "Menghitung...", 20, 166);
+
+                pCtx.font = '11px "Plus Jakarta Sans", sans-serif';
+                pCtx.fillStyle = phase === 4 ? '#ef4444' : '#10b981';
+                pCtx.fillText(phase === 4 ? "Peringatan: 24% tagihan terbuang." : "Proyeksi optimal stabil.", 20, 215);
+            }
+
+            // 6. SAVING POTENTIAL
+            const { ctx: sCtx } = boardCanvases.savingsCard;
+            drawPanelBg(sCtx, 256, 256, "Analisis Potensi Hemat", '#10b981');
+            
+            if (phase < 3) {
+                sCtx.font = 'bold 15px "Outfit", sans-serif';
+                sCtx.fillStyle = '#475569';
+                sCtx.fillText("Menunggu hasil model...", 20, 100);
+            } else {
+                sCtx.font = 'bold 22px "Outfit", sans-serif';
+                sCtx.fillStyle = '#10b981';
+                sCtx.fillText("Potensi Hasil Audit", 20, 68);
+
+                const chartHeight = 110;
+                const bottomY = 210;
+
+                // Baseline
+                const baseVal = 100;
+                const baseHeight = (baseVal / 100) * chartHeight;
+                sCtx.fillStyle = '#475569';
+                sCtx.beginPath();
+                sCtx.roundRect(40, bottomY - baseHeight, 40, baseHeight, [8,8,0,0]);
+                sCtx.fill();
+                sCtx.font = 'bold 11px "Outfit", sans-serif';
+                sCtx.fillStyle = '#ffffff';
+                sCtx.fillText("100%", 50, bottomY - baseHeight - 6);
+                sCtx.font = '9px "Plus Jakarta Sans", sans-serif';
+                sCtx.fillStyle = '#64748b';
+                sCtx.fillText("Dasar", 48, bottomY + 16);
+
+                // Target
+                const optimizedVal = phase === 4 ? 76 : 100;
+                const optHeight = (optimizedVal / 100) * chartHeight;
+                sCtx.fillStyle = phase === 4 ? '#10b981' : '#06b6d4';
+                sCtx.beginPath();
+                sCtx.roundRect(140, bottomY - optHeight, 40, optHeight, [8,8,0,0]);
+                sCtx.fill();
+                sCtx.font = 'bold 11px "Outfit", sans-serif';
+                sCtx.fillStyle = '#ffffff';
+                sCtx.fillText(`${optimizedVal}%`, 150, bottomY - optHeight - 6);
+                sCtx.font = '9px "Plus Jakarta Sans", sans-serif';
+                sCtx.fillStyle = '#64748b';
+                sCtx.fillText("Target", 143, bottomY + 16);
+            }
+
+            // Flag the textures for update
+            Object.values(boardModules).forEach(mesh => {
+                if (mesh.material.map) mesh.material.map.needsUpdate = true;
+            });
+        }
+
+        // --- 3. THREE.JS SCENE SETUP ---
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x04060c);
+            scene.fog = new THREE.FogExp2(0x04060c, 0.022);
+
+            const container = document.getElementById('webgl-canvas').parentElement;
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            camera = new THREE.PerspectiveCamera(30, width / height, 0.1, 1000);
+            resetCamera();
+
+            renderer = new THREE.WebGLRenderer({
+                canvas: document.getElementById('webgl-canvas'),
+                antialias: true,
+                powerPreference: "high-performance"
+            });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 0.95;
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2.05;
+            controls.minDistance = 8;
+            controls.maxDistance = 50;
+            controls.target.set(0, 1.3, 0);
+
+            window.addEventListener('resize', onWindowResize);
+
+            materials.floor = new THREE.MeshStandardMaterial({ color: 0x0c1322, roughness: 0.8, metalness: 0.2 });
+            materials.wall = new THREE.MeshPhysicalMaterial({
+                color: 0x06b6d4, roughness: 0.35, transmission: 0.82, thickness: 0.4, transparent: true, opacity: 0.25, depthWrite: false
+            });
+            materials.metalLight = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.18, metalness: 0.85 });
+            materials.metalDark = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.8 });
+            materials.glass = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.05, transmission: 0.95, transparent: true });
+            materials.cyanEmit = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
+            materials.greenEmit = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+            materials.redEmit = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+            materials.whiteEmit = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+            setupLights();
+            buildBuilding();
+
+            initDashboardCanvases();
+            buildDashboard3D();
+            drawDashboard(0);
+
+            setupWaveforms();
+
+            document.getElementById('loader').style.opacity = 0;
+            setTimeout(() => {
+                document.getElementById('loader').style.display = 'none';
+            }, 800);
+        }
+
+        function resetCamera() {
+            camera.position.set(18, 14, 18);
+            if (controls) controls.target.set(0, 1.3, 0);
+        }
+
+        function setupLights() {
+            const ambient = new THREE.AmbientLight(0x0b1329, 1.0);
+            scene.add(ambient);
+
+            const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+            sun.position.set(12, 18, 10);
+            sun.castShadow = true;
+            sun.shadow.mapSize.width = 2048;
+            sun.shadow.mapSize.height = 2048;
+            sun.shadow.camera.near = 0.5;
+            sun.shadow.camera.far = 45;
+            const shadowLimit = 15;
+            sun.shadow.camera.left = -shadowLimit;
+            sun.shadow.camera.right = shadowLimit;
+            sun.shadow.camera.top = shadowLimit;
+            sun.shadow.camera.bottom = -shadowLimit;
+            sun.shadow.bias = -0.0006;
+            scene.add(sun);
+
+            const coreGlow = new THREE.PointLight(0x06b6d4, 3.5, 12, 1.5);
+            coreGlow.position.copy(NODES.aiEngineCore);
+            scene.add(coreGlow);
+
+            const sensorSpot = new THREE.SpotLight(0x06b6d4, 4.0, 8, Math.PI/6, 0.5, 1);
+            sensorSpot.position.set(NODES.mainSensor.x, NODES.mainSensor.y + 2, NODES.mainSensor.z);
+            sensorSpot.target.position.copy(NODES.mainSensor);
+            scene.add(sensorSpot);
+            scene.add(sensorSpot.target);
+        }
+
+        function buildBuilding() {
+            const baseGeo = new THREE.BoxGeometry(6.6, 0.15, 6.6);
+            const base = new THREE.Mesh(baseGeo, materials.floor);
+            base.position.y = 0.08;
+            base.receiveShadow = true;
+            scene.add(base);
+
+            const tiles = new THREE.GridHelper(6, 6, 0x1e293b, 0x0f172a);
+            tiles.position.set(0, 0.16, 0);
+            scene.add(tiles);
+
+            const wallH = 2.6;
+            const wallThick = 0.12;
+            
+            const wallLeftGeo = new THREE.BoxGeometry(wallThick, wallH, 6.6);
+            const wallLeft = new THREE.Mesh(wallLeftGeo, materials.wall);
+            wallLeft.position.set(-3.24, 0.16 + wallH/2, 0);
+            scene.add(wallLeft);
+
+            const wallRightGeo = new THREE.BoxGeometry(6.6, wallH, wallThick);
+            const wallRight = new THREE.Mesh(wallRightGeo, materials.wall);
+            wallRight.position.set(0, 0.16 + wallH/2, -3.24);
+            scene.add(wallRight);
+
+            const fBeamLeft = new THREE.Mesh(new THREE.BoxGeometry(0.14, wallH, 0.14), materials.metalDark);
+            fBeamLeft.position.set(-3.24, 0.16 + wallH/2, 3.24);
+            scene.add(fBeamLeft);
+
+            const fBeamRight = new THREE.Mesh(new THREE.BoxGeometry(0.14, wallH, 0.14), materials.metalDark);
+            fBeamRight.position.set(3.24, 0.16 + wallH/2, -3.24);
+            scene.add(fBeamRight);
+
+            const fBeamCorner = new THREE.Mesh(new THREE.BoxGeometry(0.14, wallH, 0.14), materials.metalDark);
+            fBeamCorner.position.set(-3.24, 0.16 + wallH/2, -3.24);
+            scene.add(fBeamCorner);
+
+            const pipeGeo = new THREE.CylinderGeometry(0.06, 0.06, 4, 8);
+            const incomingPipe = new THREE.Mesh(pipeGeo, materials.metalDark);
+            incomingPipe.position.set(NODES.mainBreakerPanel.x, 0.5, NODES.mainBreakerPanel.z - 0.2);
+            incomingPipe.rotation.x = Math.PI / 2;
+            scene.add(incomingPipe);
+
+            // Breaker Box
+            const breakerGroup = new THREE.Group();
+            breakerGroup.position.copy(NODES.mainBreakerPanel);
+            const panelBox = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.8, 0.5), materials.metalDark);
+            panelBox.castShadow = true;
+            breakerGroup.add(panelBox);
+
+            for (let i = 0; i < 4; i++) {
+                const switchBar = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.05, 0.35), materials.metalLight);
+                switchBar.position.set(0.08, 0.2 - i * 0.12, 0);
+                breakerGroup.add(switchBar);
+            }
+            scene.add(breakerGroup);
+
+            // Sensor clip-on
+            const sensorGroup = new THREE.Group();
+            sensorGroup.position.copy(NODES.mainSensor);
+            
+            const ringGeo = new THREE.TorusGeometry(0.16, 0.05, 8, 24);
+            mainSensorClip = new THREE.Mesh(ringGeo, materials.cyanEmit);
+            mainSensorClip.rotation.y = Math.PI/2;
+            sensorGroup.add(mainSensorClip);
+
+            const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 0.15), materials.metalLight);
+            bracket.position.set(-0.1, 0, 0);
+            sensorGroup.add(bracket);
+
+            const labelPlt = createTextPlane("Sensor Tunggal", COLOR_CYAN);
+            labelPlt.position.y = -0.32;
+            sensorGroup.add(labelPlt);
+            scene.add(sensorGroup);
+
+            // AC
+            const acGroup = new THREE.Group();
+            acGroup.position.copy(NODES.ac);
+            const acBody = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.3, 0.3), materials.metalLight);
+            acBody.castShadow = true;
+            acGroup.add(acBody);
+
+            const acVent = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.04, 0.02), materials.metalDark);
+            acVent.position.set(0, -0.1, 0.14);
+            acGroup.add(acVent);
+
+            acWindGroup = new THREE.Group();
+            acWindGroup.position.set(0, -0.2, 0.12);
+            acGroup.add(acWindGroup);
+            for (let i = 0; i < 4; i++) {
+                const windLine = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.4, 4), materials.cyanEmit);
+                windLine.rotation.x = Math.PI / 4;
+                windLine.position.set((i - 1.5) * 0.18, 0, 0);
+                acWindGroup.add(windLine);
+            }
+
+            alertIcon = new THREE.Group();
+            alertIcon.position.set(0, 0.45, 0);
+            alertIcon.scale.set(0, 0, 0);
+
+            const triGeo = new THREE.ConeGeometry(0.16, 0.28, 4);
+            const tri = new THREE.Mesh(triGeo, materials.redEmit);
+            tri.rotation.x = Math.PI;
+            alertIcon.add(tri);
+
+            const exMark = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.12, 6), materials.whiteEmit);
+            exMark.position.y = 0.02;
+            alertIcon.add(exMark);
+            const exDot = new THREE.Mesh(new THREE.SphereGeometry(0.018, 6, 6), materials.whiteEmit);
+            exDot.position.y = -0.08;
+            alertIcon.add(exDot);
+
+            const alertPlate = createTextPlane("Beban AC Abnormal", COLOR_ALERT);
+            alertPlate.position.y = 0.25;
+            alertIcon.add(alertPlate);
+            acGroup.add(alertIcon);
+            scene.add(acGroup);
+
+            // Refrigerator
+            const fridgeGroup = new THREE.Group();
+            fridgeGroup.position.copy(NODES.fridge);
+            const fridgeBody = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.6, 0.8), materials.metalDark);
+            fridgeBody.castShadow = true;
+            fridgeGroup.add(fridgeBody);
+            const fGlow = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.08, 0.22), materials.cyanEmit);
+            fGlow.position.set(0.405, 0.5, -0.1);
+            fridgeGroup.add(fGlow);
+            scene.add(fridgeGroup);
+
+            // Pump
+            const pumpGroup = new THREE.Group();
+            pumpGroup.position.copy(NODES.waterPump);
+            const pumpBase = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.5), materials.metalDark);
+            pumpGroup.add(pumpBase);
+            const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.4, 8), materials.metalLight);
+            motor.position.y = 0.22; motor.rotation.x = Math.PI / 2;
+            pumpGroup.add(motor);
+            scene.add(pumpGroup);
+
+            // Washer
+            const washerGroup = new THREE.Group();
+            washerGroup.position.copy(NODES.washingMachine);
+            const wBody = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.95, 0.85), materials.metalLight);
+            wBody.castShadow = true;
+            washerGroup.add(wBody);
+            scene.add(washerGroup);
+
+            // Iron
+            const ironGroup = new THREE.Group();
+            ironGroup.position.copy(NODES.iron);
+            const board = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.05, 1.3), materials.metalLight);
+            ironGroup.add(board);
+            scene.add(ironGroup);
+
+            // Computer
+            const compGroup = new THREE.Group();
+            compGroup.position.copy(NODES.computer);
+            const tableTop = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.05, 1.45), materials.metalLight);
+            compGroup.add(tableTop);
+            scene.add(compGroup);
+
+            // Lighting
+            const lightingGroup = new THREE.Group();
+            lightingGroup.position.copy(NODES.lighting);
+            const lightRail = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.05, 0.05), materials.metalDark);
+            lightingGroup.add(lightRail);
+            for (let i = 0; i < 2; i++) {
+                const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.2, 8), materials.cyanEmit);
+                tube.rotation.z = Math.PI / 2;
+                tube.position.set(-1.0 + i * 2.0, -0.15, 0);
+                lightingGroup.add(tube);
+            }
+            scene.add(lightingGroup);
+
+            // AI Core
+            const aiCoreGroup = new THREE.Group();
+            aiCoreGroup.position.copy(NODES.aiEngineCore);
+
+            const shellMat = new THREE.MeshPhysicalMaterial({
+                color: 0x06b6d4, roughness: 0.1, transmission: 0.92, thickness: 0.15, transparent: true, opacity: 0.38, metalness: 0.1
+            });
+            aiCore = new THREE.Mesh(new THREE.SphereGeometry(0.7, 24, 24), shellMat);
+            aiCoreGroup.add(aiCore);
+
+            neuralNetGroup = new THREE.Group();
+            aiCoreGroup.add(neuralNetGroup);
+
+            const nodeCount = 12;
+            const nodePositions = [];
+            for (let i = 0; i < nodeCount; i++) {
+                const u = Math.random(); const v = Math.random();
+                const theta = u * 2.0 * Math.PI; const phi = Math.acos(2.0 * v - 1.0);
+                const r = 0.18 + Math.random() * 0.35;
+                const pos = new THREE.Vector3(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
+                nodePositions.push(pos);
+
+                const nodeMesh = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? COLOR_CYAN : COLOR_GREEN }));
+                nodeMesh.position.copy(pos);
+                neuralNetGroup.add(nodeMesh);
+            }
+
+            const points = [];
+            for (let i = 0; i < nodeCount; i++) {
+                for (let j = i + 1; j < nodeCount; j++) {
+                    if (nodePositions[i].distanceTo(nodePositions[j]) < 0.6) {
+                        points.push(nodePositions[i].x, nodePositions[i].y, nodePositions[i].z);
+                        points.push(nodePositions[j].x, nodePositions[j].y, nodePositions[j].z);
+                    }
+                }
+            }
+            const lineGeo = new THREE.BufferGeometry();
+            lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+            neuralNetGroup.add(new THREE.LineSegments(lineGeo, new THREE.LineBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.35 })));
+
+            const tag = createTextPlane("NILM AI Core", COLOR_GREEN);
+            tag.position.y = 0.95;
+            aiCoreGroup.add(tag);
+            scene.add(aiCoreGroup);
+        }
+
+        function createTextPlane(text, colorHex) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; canvas.height = 36;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'rgba(6, 12, 26, 0.9)';
+            ctx.beginPath(); ctx.roundRect(0, 0, 128, 36, 6); ctx.fill();
+            ctx.strokeStyle = `#${colorHex.toString(16).padStart(6, '0')}`;
+            ctx.lineWidth = 2; ctx.stroke();
+            ctx.font = 'bold 12px "Outfit", sans-serif'; ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 64, 18);
+
+            return new THREE.Mesh(new THREE.PlaneGeometry(0.52, 0.15), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true, side: THREE.DoubleSide }));
+        }
+
+        function buildDashboard3D() {
+            const dbGroup = new THREE.Group();
+            dbGroup.position.copy(NODES.dashboard);
+            dbGroup.rotation.x = -Math.PI / 11;
+
+            const backBoard = new THREE.Mesh(new THREE.BoxGeometry(6.0, 3.4, 0.05), new THREE.MeshPhysicalMaterial({
+                color: 0x050811, roughness: 0.1, transmission: 0.9, thickness: 0.15, transparent: true, opacity: 0.65, metalness: 0.3
+            }));
+            dbGroup.add(backBoard);
+
+            const borderLines = new THREE.LineSegments(new THREE.EdgesGeometry(backBoard.geometry), new THREE.LineBasicMaterial({ color: 0x06b6d4 }));
+            dbGroup.add(borderLines);
+
+            const layout = [
+                { id: 'header', w: 5.6, h: 0.8, x: 0, y: 1.15 },
+                { id: 'auditReport', w: 1.76, h: 0.95, x: -1.92, y: 0.15 },
+                { id: 'anomalyList', w: 1.76, h: 0.95, x: -1.92, y: -0.9 },
+                { id: 'applianceRates', w: 1.76, h: 2.0, x: 0, y: -0.375 },
+                { id: 'predictions', w: 1.76, h: 0.95, x: 1.92, y: 0.15 },
+                { id: 'savingsCard', w: 1.76, h: 0.95, x: 1.92, y: -0.9 }
+            ];
+
+            layout.forEach(slot => {
+                const canvasObj = boardCanvases[slot.id];
+                if (!canvasObj) return;
+
+                const texture = new THREE.CanvasTexture(canvasObj.canvas);
+                const mesh = new THREE.Mesh(new THREE.PlaneGeometry(slot.w, slot.h), new THREE.MeshBasicMaterial({
+                    map: texture, transparent: true, side: THREE.DoubleSide
+                }));
+                mesh.position.set(slot.x, slot.y, 0.05);
+                dbGroup.add(mesh);
+                boardModules[slot.id] = mesh;
+            });
+            scene.add(dbGroup);
+        }
+
+        function setupWaveforms() {
+            const incomingPoints = [NODES.mainPowerFeed, new THREE.Vector3(5, 0.8, -5), NODES.mainSensor, new THREE.Vector3(1.0, 2.5, -2.8), NODES.aiEngineCore];
+            const aggCurve = new THREE.CatmullRomCurve3(incomingPoints);
+
+            const aggPoints = aggCurve.getPoints(100);
+            const aggLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(aggPoints), new THREE.LineBasicMaterial({ color: COLOR_CYAN, linewidth: 2, transparent: true, opacity: 0.45 }));
+            scene.add(aggLine);
+            waveformLines.push({ curve: aggCurve, line: aggLine, type: 'aggregate' });
+
+            const disaggregatedApps = [
+                { name: 'ac', target: NODES.ac, color: COLOR_ALERT },
+                { name: 'fridge', target: NODES.fridge, color: COLOR_GREEN },
+                { name: 'waterPump', target: NODES.waterPump, color: COLOR_CYAN },
+                { name: 'washingMachine', target: NODES.washingMachine, color: COLOR_CYAN },
+                { name: 'iron', target: NODES.iron, color: COLOR_GREEN },
+                { name: 'lighting', target: NODES.lighting, color: COLOR_CYAN },
+                { name: 'computer', target: NODES.computer, color: COLOR_CYAN }
+            ];
+
+            disaggregatedApps.forEach(app => {
+                const midPoint = new THREE.Vector3().addVectors(NODES.aiEngineCore, app.target).multiplyScalar(0.5);
+                midPoint.y += 0.8;
+                const pathCurve = new THREE.CatmullRomCurve3([NODES.aiEngineCore, midPoint, app.target]);
+
+                const pathPoints = pathCurve.getPoints(50);
+                const pathLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pathPoints), new THREE.LineBasicMaterial({ color: app.color, linewidth: 1, transparent: true, opacity: 0.35 }));
+                scene.add(pathLine);
+                disaggregatedStreams.push({ curve: pathCurve, line: pathLine, color: app.color, name: app.name });
+            });
+        }
+
+        function spawnWavePulse(curve, speed = 0.015, color = COLOR_CYAN) {
+            const group = new THREE.Group();
+            const points = []; const segments = 12;
+            for (let i = 0; i <= segments; i++) {
+                points.push((i / segments - 0.5) * 0.4, Math.sin(i / segments * Math.PI * 4) * 0.08, 0);
+            }
+            const waveGeo = new THREE.BufferGeometry();
+            waveGeo.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+            group.add(new THREE.Line(waveGeo, new THREE.LineBasicMaterial({ color: color, linewidth: 3 })));
+
+            scene.add(group);
+            particles.push({ mesh: group, curve, progress: 0, speed: speed * 0.5, type: 'pulse' });
+        }
+
+        function spawnSplitStreamPulse(curve, speed = 0.02, color = COLOR_GREEN) {
+            const group = new THREE.Group();
+            const points = []; const segments = 10;
+            for (let i = 0; i <= segments; i++) {
+                points.push((i / segments - 0.5) * 0.25, Math.sin(i / segments * Math.PI * 2) * 0.05, 0);
+            }
+            const waveGeo = new THREE.BufferGeometry();
+            waveGeo.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+            group.add(new THREE.Line(waveGeo, new THREE.LineBasicMaterial({ color: color, linewidth: 2 })));
+
+            scene.add(group);
+            particles.push({ mesh: group, curve, progress: 0, speed: speed * 0.5, type: 'stream' });
+        }
+
+        function updateTimeline(progress) {
+            animProgress = progress;
+            const time = progress * LOOP_DURATION;
+
+            document.getElementById('scrubber-fill').style.width = `${progress * 100}%`;
+            document.getElementById('time-curr').innerText = `${time.toFixed(1)}s`;
+
+            let newPhaseIdx = 0;
+            PHASES.forEach((p, idx) => {
+                if (time >= p.start && time < p.end) newPhaseIdx = idx;
+            });
+
+            if (newPhaseIdx !== activePhaseIndex) {
+                activePhaseIndex = newPhaseIdx;
+                updateStepperUI(activePhaseIndex);
+            }
+
+            drawDashboard(activePhaseIndex);
+
+            const statusLbl = document.getElementById('status-lbl');
+            const statusDot = document.getElementById('status-dot');
+            const hudSignal = document.getElementById('hud-signal');
+            const hudLoads = document.getElementById('hud-loads');
+            const hudAnomaly = document.getElementById('hud-anomaly');
+
+            if (alertIcon) alertIcon.scale.set(0, 0, 0);
+            if (acWindGroup) acWindGroup.children.forEach(w => w.material.color.setHex(COLOR_CYAN));
+
+            if (isCameraAuto) updateCameraCinematic(time);
+
+            switch(activePhaseIndex) {
+                case 0:
+                    statusLbl.innerText = "Menangkap Aliran Listrik";
+                    statusDot.style.backgroundColor = "var(--primary)";
+                    statusDot.style.boxShadow = "0 0 12px var(--primary-glow)";
+                    hudSignal.innerText = "Mengambil Aliran Grid";
+                    hudLoads.innerText = "0 / 7 Aktif";
+                    hudAnomaly.innerText = "Memantau...";
+                    hudAnomaly.className = "val";
+                    if (Math.random() < 0.15) spawnWavePulse(waveformLines[0].curve, 0.016, COLOR_CYAN);
+                    break;
+                case 1:
+                    statusLbl.innerText = "Menyusun Sinyal Gelombang";
+                    statusDot.style.backgroundColor = "var(--primary)";
+                    statusDot.style.boxShadow = "0 0 12px var(--primary-glow)";
+                    hudSignal.innerText = "Gelombang Didapatkan";
+                    hudLoads.innerText = "Menganalisis beban...";
+                    hudAnomaly.innerText = "Menghitung...";
+                    hudAnomaly.className = "val";
+                    if (Math.random() < 0.2) spawnWavePulse(waveformLines[0].curve, 0.018, COLOR_CYAN);
+                    break;
+                case 2:
+                    statusLbl.innerText = "AI Mengurai Beban Alat";
+                    statusDot.style.backgroundColor = "var(--accent-green)";
+                    statusDot.style.boxShadow = "0 0 12px var(--accent-green-glow)";
+                    hudSignal.innerText = "NILM Mengurai Beban";
+                    hudLoads.innerText = "5 / 7 Teridentifikasi";
+                    hudAnomaly.innerText = "Mencocokkan...";
+                    hudAnomaly.className = "val";
+
+                    if (neuralNetGroup) {
+                        neuralNetGroup.rotation.y += 0.05;
+                        neuralNetGroup.rotation.x += 0.02;
+                    }
+                    if (Math.random() < 0.1) spawnWavePulse(waveformLines[0].curve, 0.02, COLOR_CYAN);
+                    if (Math.random() < 0.25) {
+                        disaggregatedStreams.forEach(stream => {
+                            if (stream.name !== 'ac') spawnSplitStreamPulse(stream.curve, 0.025, stream.color);
+                        });
+                    }
+                    break;
+                case 3:
+                    statusLbl.innerText = "Publikasi Telemetri Alat";
+                    statusDot.style.backgroundColor = "var(--accent-green)";
+                    statusDot.style.boxShadow = "0 0 12px var(--accent-green-glow)";
+                    hudSignal.innerText = "Disagregasi Aktif";
+                    hudLoads.innerText = "7 / 7 Beban Aktif";
+                    hudAnomaly.innerText = "Cek Siklus AC...";
+                    hudAnomaly.className = "val";
+
+                    if (neuralNetGroup) neuralNetGroup.rotation.y += 0.02;
+                    if (Math.random() < 0.25) {
+                        disaggregatedStreams.forEach(stream => spawnSplitStreamPulse(stream.curve, 0.022, stream.color));
+                    }
+                    break;
+                case 4:
+                    statusLbl.innerText = "Anomali Terdeteksi! Perlu Tindakan";
+                    statusDot.style.backgroundColor = "var(--accent-alert)";
+                    statusDot.style.boxShadow = "0 0 12px rgba(239, 68, 68, 0.5)";
+                    hudSignal.innerText = "Audit Selesai";
+                    hudLoads.innerText = "7 / 7 Aktif (1 Anomali)";
+                    hudAnomaly.innerText = "PERINGATAN KRITIS";
+                    hudAnomaly.className = "val alert";
+
+                    if (Math.random() < 0.2) {
+                        disaggregatedStreams.forEach(stream => spawnSplitStreamPulse(stream.curve, 0.025, stream.color));
+                    }
+                    if (alertIcon) {
+                        const scale = 1.0 + Math.sin(time * 15) * 0.15;
+                        alertIcon.scale.set(scale, scale, scale);
+                    }
+                    if (acWindGroup) acWindGroup.children.forEach(w => w.material.color.setHex(COLOR_ALERT));
+                    break;
+            }
+        }
+
+        function updateCameraCinematic(time) {
+            if (time >= 0 && time < 3.0) {
+                const pct = time / 3.0;
+                camera.position.set(THREE.MathUtils.lerp(18, 10, pct), THREE.MathUtils.lerp(14, 5.5, pct), THREE.MathUtils.lerp(18, 10, pct));
+                controls.target.set(THREE.MathUtils.lerp(0, NODES.mainSensor.x, pct), THREE.MathUtils.lerp(1.3, NODES.mainSensor.y, pct), THREE.MathUtils.lerp(0, NODES.mainSensor.z, pct));
+            } 
+            else if (time >= 3.0 && time < 6.0) {
+                const pct = (time - 3.0) / 3.0;
+                camera.position.set(THREE.MathUtils.lerp(10, 8, pct), THREE.MathUtils.lerp(5.5, 6.5, pct), THREE.MathUtils.lerp(10, 2, pct));
+                controls.target.set(THREE.MathUtils.lerp(NODES.mainSensor.x, NODES.aiEngineCore.x, pct), THREE.MathUtils.lerp(NODES.mainSensor.y, NODES.aiEngineCore.y, pct), THREE.MathUtils.lerp(NODES.mainSensor.z, NODES.aiEngineCore.z, pct));
+            }
+            else if (time >= 6.0 && time < 9.0) {
+                const pct = (time - 6.0) / 3.0;
+                const angle = pct * Math.PI * 0.4 + Math.PI / 4; const r = 7;
+                camera.position.set(NODES.aiEngineCore.x + r * Math.cos(angle), NODES.aiEngineCore.y + 3.0, NODES.aiEngineCore.z + r * Math.sin(angle));
+                controls.target.copy(NODES.aiEngineCore);
+            }
+            else if (time >= 9.0 && time < 12.0) {
+                const pct = (time - 9.0) / 3.0;
+                camera.position.set(THREE.MathUtils.lerp(NODES.aiEngineCore.x + 5, 17, pct), THREE.MathUtils.lerp(NODES.aiEngineCore.y + 3.0, 13, pct), THREE.MathUtils.lerp(NODES.aiEngineCore.z + 5, 17, pct));
+                controls.target.set(THREE.MathUtils.lerp(NODES.aiEngineCore.x, 0.5, pct), THREE.MathUtils.lerp(NODES.aiEngineCore.y, 1.8, pct), THREE.MathUtils.lerp(NODES.aiEngineCore.z, 0, pct));
+            }
+            else if (time >= 12.0 && time < 15.0) {
+                const pct = (time - 12.0) / 3.0;
+                camera.position.set(THREE.MathUtils.lerp(17, 16, pct), THREE.MathUtils.lerp(13, 11, pct), THREE.MathUtils.lerp(17, 15, pct));
+                controls.target.set(THREE.MathUtils.lerp(0.5, NODES.dashboard.x, pct), THREE.MathUtils.lerp(1.8, NODES.dashboard.y - 1.5, pct), THREE.MathUtils.lerp(0, NODES.dashboard.z, pct));
+            }
+        }
+
+        function updateStepperUI(idx) {
+            const steps = document.querySelectorAll('.timeline-step');
+            steps.forEach((step, i) => {
+                step.classList.toggle('active', i === idx);
+            });
+        }
+
+        function animate(timestamp) {
+            requestAnimationFrame(animate);
+
+            if (!lastTime) lastTime = timestamp;
+            const delta = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+
+            if (isPlaying) {
+                let p = animProgress + (delta / LOOP_DURATION) * playSpeed;
+                if (p >= 1.0) p = 0; 
+                updateTimeline(p);
+            }
+
+            if (!isCameraAuto && controls) {
+                controls.autoRotate = true;
+                controls.autoRotateSpeed = 0.5 * (playSpeed * 2.0); // Constant speed
+            } else if (controls) {
+                controls.autoRotate = false;
+            }
+            controls.update();
+
+            if (aiCore) {
+                aiCore.rotation.y += 0.005;
+                aiCore.rotation.z += 0.002;
+            }
+
+            if (acWindGroup) {
+                acWindGroup.children.forEach(w => {
+                    w.position.y -= 0.008 * (playSpeed * 2.0);
+                    w.position.z += 0.008 * (playSpeed * 2.0);
+                    if (w.position.y < -0.6) {
+                        w.position.y = 0; w.position.z = 0;
+                    }
+                });
+            }
+
+            for(let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.progress += p.speed;
+                if (p.progress >= 1.0) {
+                    scene.remove(p.mesh);
+                    p.mesh.traverse(child => {
+                        if (child.geometry) child.geometry.dispose();
+                        if (child.material) {
+                            if (Array.isArray(child.material)) {
+                                child.material.forEach(m => m.dispose());
+                            } else {
+                                child.material.dispose();
+                            }
+                        }
+                    });
+                    particles.splice(i, 1);
+                } else {
+                    p.mesh.position.copy(p.curve.getPointAt(p.progress));
+                    p.mesh.lookAt(new THREE.Vector3().addVectors(p.mesh.position, p.curve.getTangentAt(p.progress)));
+                    p.mesh.children.forEach(wl => wl.rotation.z += 0.15);
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function setupUIControls() {
+            const scrubber = document.getElementById('timeline-scrubber');
+            let isDragging = false;
+
+            const scrub = (e) => {
+                const rect = scrubber.getBoundingClientRect();
+                const offsetX = (e.clientX || e.touches[0].clientX) - rect.left;
+                let pct = offsetX / rect.width;
+                pct = Math.max(0, Math.min(1, pct));
+                updateTimeline(pct);
+            };
+
+            scrubber.addEventListener('mousedown', (e) => {
+                isDragging = true; isPlaying = false; isCameraAuto = false;
+                updateCameraModeUI(); updatePlayButtonUI(); scrub(e);
+            });
+            window.addEventListener('mousemove', (e) => { if (isDragging) scrub(e); });
+            window.addEventListener('mouseup', () => { isDragging = false; });
+
+            const steps = document.querySelectorAll('.timeline-step');
+            steps.forEach(step => {
+                step.addEventListener('click', () => {
+                    const phaseVal = parseInt(step.getAttribute('data-phase'));
+                    isPlaying = false; isCameraAuto = false;
+                    updateCameraModeUI(); updatePlayButtonUI();
+                    updateTimeline(PHASES[phaseVal].start / LOOP_DURATION);
+                });
+            });
+
+            const playBtn = document.getElementById('btn-play-pause');
+            const playIcon = document.getElementById('play-icon');
+            const pauseIcon = document.getElementById('pause-icon');
+
+            const updatePlayButtonUI = () => {
+                if (isPlaying) {
+                    playIcon.style.display = 'none';
+                    pauseIcon.style.display = 'block';
+                } else {
+                    playIcon.style.display = 'block';
+                    pauseIcon.style.display = 'none';
+                }
+            };
+            playBtn.addEventListener('click', () => {
+                isPlaying = !isPlaying; updatePlayButtonUI();
+            });
+
+            const camAutoBtn = document.getElementById('cam-auto');
+            const camFreeBtn = document.getElementById('cam-free');
+
+            const updateCameraModeUI = () => {
+                camAutoBtn.classList.toggle('active', isCameraAuto);
+                camFreeBtn.classList.toggle('active', !isCameraAuto);
+            };
+
+            camAutoBtn.addEventListener('click', () => {
+                isCameraAuto = true; updateCameraModeUI();
+            });
+            camFreeBtn.addEventListener('click', () => {
+                isCameraAuto = false; updateCameraModeUI(); resetCamera();
+            });
+
+            document.getElementById('btn-reset-view').addEventListener('click', () => {
+                isCameraAuto = false; updateCameraModeUI(); resetCamera();
+            });
+
+            const speedBtns = document.querySelectorAll('.btn-speed');
+            speedBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    speedBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    playSpeed = parseFloat(btn.getAttribute('data-speed'));
+                });
+            });
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('webgl-canvas').parentElement;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            init(); setupUIControls();
+            requestAnimationFrame(animate);
+        });
+    </script>
+</body>
+</html>
