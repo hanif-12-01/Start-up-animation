@@ -178,11 +178,14 @@ AppShell
 ### 4.5 `TraceDrawer` ("Why This Result?" Inspector)
 - **Purpose**: Displays the complete computational provenance and formula breakdown for any selected metric without UI formula duplication.
 - **Data Input**: `UITraceViewModel` generated directly from engine execution traces:
-  - Metric name & formatted value.
-  - Formula expression string (engine-generated, e.g., `active_pro_customers * pro_plan_monthly_price`).
-  - Inputs table with variable name, runtime value, and epistemic badge.
-  - Provenance breadcrumb (ADR lock, scenario override, or default baseline).
-  - "Close" and "Open Upstream Variable" actions.
+  - Output Variable ID, formatted value, and unit.
+  - Output Epistemic Status (`KnowledgeStatus`) and Confidence rating.
+  - Rule ID and Rule Class (from engine `RuleRegistry`).
+  - Engine-generated explanation string (plain-English formula representation).
+  - Runtime inputs table: input variable IDs, names, evaluated values, units, and epistemic badges.
+  - Provenance metadata (e.g. `RULE:FINANCE_001_CALCULATE_MRR`, ADR lock, scenario override, or baseline origin).
+  - Evaluated simulation tick and month index.
+  - Interactive actions: "Close Drawer" and "Inspect Upstream Variable".
 
 ---
 

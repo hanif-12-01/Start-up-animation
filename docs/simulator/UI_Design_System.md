@@ -252,13 +252,20 @@ Inputs are tailored directly to the underlying Phase 2 data types cataloged in [
 
 ---
 
-## 7. Accessibility & Usability Standards (WCAG 2.1 AA)
+## 7. Accessibility & Usability Standards (Accessibility Target: WCAG 2.1 AA)
 
-1. **Color Contrast:** Every text pairing satisfies minimum contrast ratio of $4.5:1$ against its background ($3.0:1$ for large headings).
-2. **Keyboard Navigation:** Full interactive loop operable via keyboard alone (`Tab`, `Shift+Tab`, `Space`, `Enter`, Arrow keys).
-3. **Visible Focus Rings:** Focused elements display an unmistakable $2\text{px}$ teal ring (`outline: 2px solid var(--color-border-focus); outline-offset: 2px;`).
-4. **Screen Reader Semantics:** Semantic HTML elements utilized exclusively (`<nav>`, `<main>`, `<section>`, `<article>`, `<header>`, `<table>`, `<button>`).
-5. **Reduced Motion Support:** Respects user's operating system preferences:
+> [!NOTE]
+> At this Phase 4A architectural stage, accessibility standards represent **explicit design targets and planned implementation requirements**, not verified compliance claims. Conformance will be evaluated and verified through automated (axe-core / Lighthouse) and manual keyboard audits in Phase 4B (Slice 12).
+
+### 7.1 Planned Implementation Requirements
+1. **Sufficient Color Contrast:** Target minimum contrast ratio of $4.5:1$ for standard body text against surface backgrounds ($3.0:1$ for large headings $\ge 18\text{pt}$ or bold $\ge 14\text{pt}$).
+2. **Full Keyboard Navigation:** Entire canonical interaction loop (scenario selection, parameter tuning, simulation execution, timeline scrubbing, and trace inspection) operable via keyboard alone (`Tab`, `Shift+Tab`, `Space`, `Enter`, Arrow keys).
+3. **Visible Focus Rings:** Focused interactive elements display an unmistakable $2\text{px}$ teal ring (`outline: 2px solid var(--color-border-focus); outline-offset: 2px;`).
+4. **Semantic HTML Structure:** Semantic HTML elements utilized exclusively (`<header>`, `<nav>`, `<main>`, `<section>`, `<article>`, `<table>`, `<button>`).
+5. **Proper Form Labels:** Every form input control explicitly and programmatically paired with a descriptive `<label>` tag.
+6. **Non-Color-Only Status Indicators:** Epistemic status badges communicate meaning via text label, distinctive iconography, and border styling—never relying solely on color.
+7. **Textual Alternatives for Visualizations:** Native SVG charts paired with descriptive ARIA labels, accessible summary cards, and fallback data tables.
+8. **Reduced Motion Support:** Respects user's operating system preferences by suppressing non-essential transitions and animations:
    ```css
    @media (prefers-reduced-motion: reduce) {
      *, ::before, ::after {

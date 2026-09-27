@@ -312,8 +312,9 @@ The AppShell maintains persistent top navigation, an epistemic legend, workspace
 ├──────────────────────────────────────────────────────────────────────────────────┤
 │ PROVENANCE & RULE REGISTRATION:                                                  │
 │ • Calculated by Engine Rule: `FINANCE_001_CALCULATE_MRR`                         │
-│ • Rule Hash: `sha256:7f4a8e...`                                                 │
-│ • Execution Time: 0.14 ms                                                        │
+│ • Rule Class: `ACCOUNTING_IDENTITY`                                              │
+│ • Provenance: `RULE:FINANCE_001_CALCULATE_MRR`                                   │
+│ • Output Status: ● CURRENT (Derived) | Confidence: HIGH                          │
 │ • Baseline Protection: Pricing locked by ADR-002. No scenario overrides active.  │
 └──────────────────────────────────────────────────────────────────────────────────┘
 ```

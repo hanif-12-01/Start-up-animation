@@ -265,6 +265,8 @@ Clicking `"Why this result?"` requests a trace projection from the adapter:
   ],
   "result_value": 3.75,
   "result_status": "SIMULATION_ASSUMPTION",
+  "confidence": "MEDIUM",
+  "provenance": "RULE:RULE-FUN-04",
   "plain_english_summary": "(15.00 trials * 5.0% = 0.75) + (20 leads * 15.0% = 3.00) = 3.75 new paid customers"
 }
 ```
