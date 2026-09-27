@@ -184,18 +184,30 @@ The engine utilizes specific error classes to ensure debuggability:
 
 ---
 
-## 8. Approved Baselines & Empirical Unknowns Lock
+## 8. Approved Baselines, ADR Locks & Epistemic Taxonomy
 
-### Canonical Approved Baselines (Immutable)
+### Canonical ADR-Locked Baselines (Human-Accepted Policies)
+The phrase **"Locked Human ADR Baselines"** applies strictly to values established by accepted Architecture Decision Records:
 - `business_tier_location_cap = 50` (ADR-002)
-- `pro_tier_location_cap = 3` (ADR-004)
 - `trial_activation_trigger = EXPLICIT` (ADR-003)
+- `pro_tier_location_cap = 3` (ADR-004)
 - `free_history_retention_mode = ROLLING_3_MONTH_WINDOW` (ADR-005)
 - `forecast_method = DETERMINISTIC_HEURISTIC` (ADR-006)
 - `data_provenance_mode = STRICT_TAGGED` (ADR-007)
 - `revenue_after_electricity = canonical customer metric` (ADR-008)
 
-### The 10 Empirical Unknowns (Default = UNKNOWN)
+### Source-Backed Current / Model Baselines (Non-ADR)
+The following model parameters carry empirical/code authority from repository artifacts but are **NOT ADR-locked**:
+- `pro_price_monthly = 49000` (Knowledge Status: `CURRENT` [UI Display SRC-015] / `HYPOTHESIS` [WTP])
+- `business_price_monthly = 149000` (Knowledge Status: `CURRENT` [UI Display SRC-015] / `HYPOTHESIS` [WTP])
+- `trial_duration_days = 30` (Knowledge Status: `CURRENT & ACCEPTED_BASELINE` [SRC-012, T-02])
+- `free_plan_enabled = true` (Knowledge Status: `CURRENT` [SRC-010, T-04])
+
+### Flexible Simulation Variables (Non-ADR)
+- `free_recommendation_gating_mode`: Baseline = `TOP_3_ANY_CATEGORY`; Scenario Alternative = `DATA_COMPLETENESS_ALERTS_ONLY`. Retains multi-scenario flexibility and is not locked by ADR.
+
+### The 10 Canonical Empirical Unknowns (Default = UNKNOWN)
+A **Canonical Empirical Unknown** is a real-world parameter that lacks empirical WattWise operational evidence and was formally cataloged during Phase 2 (`Variable_Dictionary.md` §4). Exactly 10 variables constitute this canonical register:
 1. `monthly_account_churn_rate`
 2. `trial_to_paid_conversion_rate`
 3. `cac`
@@ -206,3 +218,9 @@ The engine utilizes specific error classes to ensure debuggability:
 8. `forecast_error_rate`
 9. `database_cost`
 10. `average_locations_per_business_account`
+
+### Derived Runtime UNKNOWN vs Canonical Empirical UNKNOWN
+- **Runtime UNKNOWN:** Any variable that evaluates to `UNKNOWN` during a simulation run because one or more required upstream inputs are unknown (e.g. `signup_count`, `onboarded_user_count`, `trial_user_count`, `new_paid_customer_count`, `total_mrr`, `arr`, `monthly_burn`, `cash_runway_months`). A derived variable becoming `UNKNOWN` at runtime does **NOT** make it a member of the canonical empirical unknown register.
+- **Unseeded Simulation Inputs:** Levers such as `signup_rate`, `onboarding_completion_rate`, `trial_start_rate`, `leads`, and `qualified_leads` default to `UNKNOWN` in baseline but represent scenario inputs without defaults, not canonical empirical unknowns.
+- **Inter-Tick Unknown Safety:** Cash carryover (`cash_balance`) and customer cohort carryover (`active_pro_customers`, `active_business_customers`) explicitly propagate `UNKNOWN` when upstream inputs (`monthly_burn`, `cash_balance`, or `retained_customer_count`) are `UNKNOWN`. No transition may silently coerce `UNKNOWN` to `0` or arbitrary defaults.
+

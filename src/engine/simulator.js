@@ -2,7 +2,7 @@
  * Simulation Engine — Core deterministic simulation runner.
  */
 
-import { SimulationValue, KnowledgeStatus, ConfidenceRating } from './value.js';
+import { SimulationValue, KnowledgeStatus, ConfidenceRating, createUnknownValue } from './value.js';
 import { ScenarioValidator } from './validator.js';
 import { ExecutionTrace } from './trace.js';
 
@@ -157,6 +157,12 @@ export class SimulationEngine {
         explanation: `Carried over from t=${t-1} minus burn of Rp${prevBurn.value}`,
         provenance: 'INTER_TICK_CASH_FLOW'
       }));
+    } else if (prevCash && prevBurn && (prevCash.is_unknown || prevBurn.is_unknown)) {
+      currentState.set('cash_balance', createUnknownValue(
+        'cash_balance',
+        `Inter-tick cash carryover at t=${t} is UNKNOWN because upstream ${prevCash.is_unknown ? 'prior cash_balance' : 'prior monthly_burn'} is UNKNOWN.`,
+        'INTER_TICK_CASH_FLOW'
+      ));
     }
 
     // 2. Subscriber carryover: active_customers(t) = retained(t-1) + new(t-1)
@@ -165,9 +171,21 @@ export class SimulationEngine {
     const prevPro = previousState.get('active_pro_customers');
     const prevBiz = previousState.get('active_business_customers');
 
-    if (prevRetained && prevNew && !prevRetained.is_unknown && !prevNew.is_unknown) {
+    if (prevRetained && prevRetained.is_unknown) {
+      currentState.set('active_pro_customers', createUnknownValue(
+        'active_pro_customers',
+        `Cohort carryover at t=${t} is UNKNOWN because upstream prior retained_customer_count is UNKNOWN.`,
+        'COHORT_AGING_TRANSITION'
+      ));
+      currentState.set('active_business_customers', createUnknownValue(
+        'active_business_customers',
+        `Cohort carryover at t=${t} is UNKNOWN because upstream prior retained_customer_count is UNKNOWN.`,
+        'COHORT_AGING_TRANSITION'
+      ));
+    } else if (prevRetained && !prevRetained.is_unknown) {
       // Allocate retained + new proportionally across tiers based on prior mix
-      const totalPaid = Math.max(0, Number(prevRetained.value) + Number(prevNew.value));
+      const newPaidVal = (prevNew && !prevNew.is_unknown) ? Number(prevNew.value) : 0;
+      const totalPaid = Math.max(0, Number(prevRetained.value) + newPaidVal);
       const oldTotal = (prevPro?.value || 0) + (prevBiz?.value || 0);
       const proRatio = oldTotal > 0 ? (prevPro.value / oldTotal) : 0.8;
       const bizRatio = 1 - proRatio;

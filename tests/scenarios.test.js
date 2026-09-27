@@ -13,25 +13,36 @@ describe('Benchmark Scenarios Suite', () => {
       for (let t = 0; t <= 6; t++) {
         const state = result.ticks[t];
 
-        // 10 empirical unknowns must remain strictly UNKNOWN
-        assert.equal(state.get('visitor_count').is_unknown, true);
-        assert.equal(state.get('signup_rate').is_unknown, true);
-        assert.equal(state.get('signup_count').is_unknown, true);
-        assert.equal(state.get('onboarding_completion_rate').is_unknown, true);
-        assert.equal(state.get('onboarded_user_count').is_unknown, true);
-        assert.equal(state.get('trial_start_rate').is_unknown, true);
-        assert.equal(state.get('trial_user_count').is_unknown, true);
+        // 1. Exactly the 10 Canonical Empirical Unknowns must remain strictly UNKNOWN
+        assert.equal(state.get('monthly_account_churn_rate').is_unknown, true);
         assert.equal(state.get('trial_to_paid_conversion_rate').is_unknown, true);
+        assert.equal(state.get('cac').is_unknown, true);
+        assert.equal(state.get('support_tickets_per_customer').is_unknown, true);
+        assert.equal(state.get('support_cost_per_ticket').is_unknown, true);
+        assert.equal(state.get('support_tickets_per_location').is_unknown, true);
+        assert.equal(state.get('visitor_count').is_unknown, true);
+        assert.equal(state.get('forecast_error_rate').is_unknown, true);
+        assert.equal(state.get('database_cost').is_unknown, true);
+        assert.equal(state.get('average_locations_per_business_account').is_unknown, true);
+
+        // 2. Unseeded simulation inputs without defaults remain UNKNOWN
+        assert.equal(state.get('signup_rate').is_unknown, true);
+        assert.equal(state.get('onboarding_completion_rate').is_unknown, true);
+        assert.equal(state.get('trial_start_rate').is_unknown, true);
         assert.equal(state.get('leads').is_unknown, true);
         assert.equal(state.get('qualified_leads').is_unknown, true);
 
-        // Dependent outputs must also remain UNKNOWN
+        // 3. Derived runtime unknowns arising through rule evaluation remain UNKNOWN
+        assert.equal(state.get('signup_count').is_unknown, true);
+        assert.equal(state.get('onboarded_user_count').is_unknown, true);
+        assert.equal(state.get('trial_user_count').is_unknown, true);
+        assert.equal(state.get('new_paid_customer_count').is_unknown, true);
         assert.equal(state.get('total_mrr').is_unknown, true);
         assert.equal(state.get('arr').is_unknown, true);
         assert.equal(state.get('monthly_burn').is_unknown, true);
         assert.equal(state.get('cash_runway_months').is_unknown, true);
 
-        // Accepted baselines must remain immutable
+        // 4. Accepted baselines must remain immutable
         assert.equal(state.get('free_plan_enabled').value, true);
         assert.equal(state.get('pro_tier_location_cap').value, 3);
         assert.equal(state.get('business_tier_location_cap').value, 50);

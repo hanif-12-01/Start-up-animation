@@ -47,6 +47,7 @@ This document defines the formal automated test matrix required to validate the 
 | **FAM-H** | **Dependency Resolution & Cycles** | Tests DAG topological sorting and detection of circular dependencies (`CycleError`). | PASS |
 | **FAM-I** | **Financial Separation** | Proves customer-level `revenue_after_electricity` (ADR-008) cannot contaminate WattWise startup MRR or cash reserves. | PASS |
 | **FAM-J** | **Provenance & Knowledge Status** | Tests proper inheritance of knowledge statuses (`CURRENT`, `ACCEPTED_BASELINE`, `SIMULATION_ASSUMPTION`, `UNKNOWN`). | PASS |
+| **FAM-K** | **Canonical Unknowns & Governance Alignment** | Verifies exactly 10 canonical empirical unknowns, distinguishes derived runtime unknowns, validates ADR-lock scope vs non-ADR baselines, validates free gating scenario flexibility, and tests inter-tick UNKNOWN safety. | PASS |
 
 ---
 

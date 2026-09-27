@@ -376,3 +376,26 @@ Every calculation rule belongs to exactly one primary class:
 - **Critical Architectural Boundary:** This metric belongs strictly to the **customer's** business economics. It MUST NEVER be added to, mixed with, or treated as WattWise startup revenue (`total_mrr`, `arr`, `gross_profit`).
 - **Confidence:** `HIGH`
 - **Test Cases:** Client revenue Rp50.000.000, electricity Rp4.000.000 $\implies$ Rp46.000.000.
+
+---
+
+### Domain 7: INTER-TICK STATE TRANSITION RULES
+
+#### `TRANS-01`: Cash Balance Solvency Carryover
+- **Rule ID:** `TRANS-01`
+- **Output Variable:** `cash_balance` (at tick $t \ge 1$)
+- **Input Variables:** `cash_balance` (at $t-1$), `monthly_burn` (at $t-1$)
+- **Rule Class:** `IDENTITY`
+- **Description:** Solvency balance continuity deducting preceding month's net cash burn from reserves.
+- **Expression:**
+  $$\text{cash\_balance}(t) = \max(0, \text{cash\_balance}(t-1) - \text{monthly\_burn}(t-1))$$
+- **UNKNOWN Behavior:** If either $\text{cash\_balance}(t-1)$ or $\text{monthly\_burn}(t-1)$ is `UNKNOWN`, $\text{cash\_balance}(t) = \text{UNKNOWN}$ with provenance `INTER_TICK_CASH_FLOW`. It is strictly forbidden to coerce `UNKNOWN` to $0$ or evaluate partial differences.
+
+#### `TRANS-02`: Customer Cohort Aging & Carryover
+- **Rule ID:** `TRANS-02`
+- **Output Variables:** `active_pro_customers`, `active_business_customers` (at tick $t \ge 1$)
+- **Input Variables:** `retained_customer_count` (at $t-1$), `new_paid_customer_count` (at $t-1$)
+- **Rule Class:** `MODEL_ASSUMPTION`
+- **Description:** Subscriber continuity carrying over retained accounts plus newly acquired paying accounts, allocated proportionally across tiers based on prior customer mix.
+- **UNKNOWN Behavior:** If $\text{retained\_customer\_count}(t-1)$ is `UNKNOWN` (e.g. churn rate lacks empirical calibration), active subscriber counts for tick $t$ evaluate strictly to `UNKNOWN` with provenance `COHORT_AGING_TRANSITION`.
+

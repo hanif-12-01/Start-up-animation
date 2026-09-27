@@ -3,6 +3,29 @@
  * ADR-002 through ADR-008 baselines are locked; empirical unknowns are UNKNOWN.
  */
 
+export const CANONICAL_EMPIRICAL_UNKNOWNS = Object.freeze([
+  'monthly_account_churn_rate',
+  'trial_to_paid_conversion_rate',
+  'cac',
+  'support_tickets_per_customer',
+  'support_cost_per_ticket',
+  'support_tickets_per_location',
+  'visitor_count',
+  'forecast_error_rate',
+  'database_cost',
+  'average_locations_per_business_account'
+]);
+
+export const ADR_LOCKED_VARIABLES = Object.freeze([
+  'business_tier_location_cap',
+  'trial_activation_trigger',
+  'pro_tier_location_cap',
+  'free_history_retention_mode',
+  'forecast_method',
+  'data_provenance_mode',
+  'revenue_after_electricity'
+]);
+
 export const CANONICAL_BASELINE = Object.freeze({
   "free_plan_enabled": true,
   "pro_tier_location_cap": 3,

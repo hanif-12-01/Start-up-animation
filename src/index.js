@@ -17,7 +17,11 @@ import {
 } from './engine/errors.js';
 
 import { VARIABLES } from './model/variables.js';
-import { CANONICAL_BASELINE } from './model/baseline.js';
+import {
+  CANONICAL_BASELINE,
+  CANONICAL_EMPIRICAL_UNKNOWNS,
+  ADR_LOCKED_VARIABLES
+} from './model/baseline.js';
 import { RULES } from './model/rules.js';
 
 /**
@@ -66,6 +70,8 @@ export {
   ModelExecutionError,
   VARIABLES,
   CANONICAL_BASELINE,
+  CANONICAL_EMPIRICAL_UNKNOWNS,
+  ADR_LOCKED_VARIABLES,
   RULES
 };
 

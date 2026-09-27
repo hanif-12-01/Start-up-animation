@@ -19,20 +19,21 @@ for (const chunk of chunks) {
   };
 
   const name = getField('Display Name');
-  const domain = getField('Domain').replace(/`/g, '');
-  const description = getField('Description');
-  const role = getField('Role').replace(/`/g, '');
-  const dataType = getField('Data Type').replace(/`/g, '');
-  const unit = getField('Unit');
-  const knowledgeStatus = getField('Knowledge Status').replace(/`/g, '');
+  const domain = getField('Domain').replace(/`/g, '').trim();
+  const description = getField('Description').trim();
+  const role = getField('Role').replace(/`/g, '').trim();
+  const dataType = getField('Data Type').replace(/`/g, '').trim();
+  const unit = getField('Unit').replace(/`/g, '').trim();
+  const knowledgeStatus = getField('Knowledge Status').replace(/`/g, '').trim();
   const rawBaseline = getField('Baseline Value');
   const allowedValues = getField('Allowed / Scenario Values');
   const minimum = getField('Minimum');
   const maximum = getField('Maximum');
-  const confidence = getField('Confidence');
-  const editable = getField('Editable by User') === 'YES';
-  const implementationStatus = getField('Implementation Status').replace(/`/g, '');
-  const notes = getField('Notes');
+  const sourceEvidence = getField('Source / Evidence').replace(/`/g, '').trim();
+  const confidence = getField('Confidence').replace(/`/g, '').trim();
+  const editable = getField('Editable by User').replace(/`/g, '').trim().toUpperCase() === 'YES';
+  const implementationStatus = getField('Implementation Status').replace(/`/g, '').trim();
+  const notes = getField('Notes').trim();
 
   // Parse baseline value
   let parsedBaseline = 'UNKNOWN';
@@ -85,6 +86,7 @@ for (const chunk of chunks) {
     allowedValues: parsedAllowed,
     minimum: numMin,
     maximum: numMax,
+    sourceEvidence,
     confidence,
     editable,
     implementationStatus,
@@ -107,6 +109,29 @@ const baselineContent = `/**
  * Canonical Baseline State generated from Variable_Dictionary.md
  * ADR-002 through ADR-008 baselines are locked; empirical unknowns are UNKNOWN.
  */
+
+export const CANONICAL_EMPIRICAL_UNKNOWNS = Object.freeze([
+  'monthly_account_churn_rate',
+  'trial_to_paid_conversion_rate',
+  'cac',
+  'support_tickets_per_customer',
+  'support_cost_per_ticket',
+  'support_tickets_per_location',
+  'visitor_count',
+  'forecast_error_rate',
+  'database_cost',
+  'average_locations_per_business_account'
+]);
+
+export const ADR_LOCKED_VARIABLES = Object.freeze([
+  'business_tier_location_cap',
+  'trial_activation_trigger',
+  'pro_tier_location_cap',
+  'free_history_retention_mode',
+  'forecast_method',
+  'data_provenance_mode',
+  'revenue_after_electricity'
+]);
 
 export const CANONICAL_BASELINE = Object.freeze(${JSON.stringify(baseline, null, 2)});
 
